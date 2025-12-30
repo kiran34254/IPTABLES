@@ -1,0 +1,46 @@
+1️⃣ Backup current iptables & ip6tables rules
+Run as root (preferably from console access):
+mkdir -p /etc/iptables
+Backup IPv4 rules
+iptables-save > /etc/iptables/iptables.rules
+Backup IPv6 rules
+ip6tables-save > /etc/iptables/ip6tables.rules
+Verify backup
+ls -l /etc/iptables/
+You should see:
+iptables.rules
+ip6tables.rules
+2️⃣ Restore rules manually (test first)
+⚠️ Always test restore before systemd
+iptables-restore < /etc/iptables/iptables.rules
+ip6tables-restore < /etc/iptables/ip6tables.rules
+Check:
+iptables -L -n
+ip6tables -L -n
+If SSH stays alive → good 👍
+3️⃣ Create systemd service for iptables restore
+Create service file
+vi /etc/systemd/system/iptables-restore.service
+Paste this content
+[Unit]
+Description=Restore iptables and ip6tables rules
+DefaultDependencies=no
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/iptables-restore /etc/iptables/iptables.rules
+ExecStart=/usr/sbin/ip6tables-restore /etc/iptables/ip6tables.rules
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+4️⃣ Reload systemd and enable service
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl enable iptables-restore.service
+Start service manually (test)
+systemctl start iptables-restore.service
+Check status
+systemctl status iptables-restore.service
