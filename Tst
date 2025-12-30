@@ -1,27 +1,39 @@
-1️⃣ Backup current iptables & ip6tables rules
-Run as root (preferably from console access):
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -p tcp --dport 4118 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8400 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8403 -j ACCEPT
+iptables -A INPUT -p tcp --dport 14118 -j ACCEPT
+iptables -A INPUT -p tcp --dport 27041 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8443 -j ACCEPT
+iptables -A INPUT -p tcp --dport 4750 -j ACCEPT
+iptables -A INPUT -p tcp --dport 3478 -j ACCEPT
+iptables -A INPUT -p udp --dport 3478 -j ACCEPT
+iptables -A INPUT -p tcp --dport 5349 -j ACCEPT
+iptables -A INPUT -p udp --dport 5349 -j ACCEPT
+iptables -A INPUT -p tcp --dport 4152 -j ACCEPT
+iptables -A INPUT -p udp --dport 4152 -j ACCEPT
+iptables -A INPUT -p tcp --dport 4153 -j ACCEPT
+iptables -A INPUT -p udp --dport 4153 -j ACCEPT
+iptables -A INPUT -p tcp --dport 4154 -j ACCEPT
+iptables -A INPUT -p udp --dport 4154 -j ACCEPT
+iptables -A INPUT -p tcp --dport 4155 -j ACCEPT
+iptables -A INPUT -p udp --dport 4155 -j ACCEPT
+iptables -A INPUT -p tcp --dport 4156 -j ACCEPT
+iptables -A INPUT -p udp --dport 4156 -j ACCEPT
+iptables -A INPUT -p tcp --dport 4157 -j ACCEPT
+iptables -A INPUT -p udp --dport 4157 -j ACCEPT
+
+
+  ports: 27041/tcp 22/tcp 4750/tcp 3478/tcp 3478/udp 5349/udp 5349/tcp 4152/tcp 4152/udp 4153/udp 4153/tcp 4154/tcp 4154/udp 4155/udp 4155/tcp 4156/tcp 4156/udp 4157/udp 4157/tcp
+
+
 mkdir -p /etc/iptables
-Backup IPv4 rules
 iptables-save > /etc/iptables/iptables.rules
-Backup IPv6 rules
 ip6tables-save > /etc/iptables/ip6tables.rules
-Verify backup
-ls -l /etc/iptables/
-You should see:
-iptables.rules
-ip6tables.rules
-2️⃣ Restore rules manually (test first)
-⚠️ Always test restore before systemd
-iptables-restore < /etc/iptables/iptables.rules
-ip6tables-restore < /etc/iptables/ip6tables.rules
-Check:
-iptables -L -n
-ip6tables -L -n
-If SSH stays alive → good 👍
-3️⃣ Create systemd service for iptables restore
-Create service file
+
 vi /etc/systemd/system/iptables-restore.service
-Paste this content
+
 [Unit]
 Description=Restore iptables and ip6tables rules
 DefaultDependencies=no
@@ -36,11 +48,27 @@ RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-4️⃣ Reload systemd and enable service
+
+
+
 systemctl daemon-reexec
 systemctl daemon-reload
 systemctl enable iptables-restore.service
-Start service manually (test)
+
+
 systemctl start iptables-restore.service
-Check status
-systemctl status iptables-restore.service
+
+iptables -P INPUT DROP
+ 
+iptables -P FORWARD DROP
+ 
+ip6tables -P INPUT DROP
+ 
+ip6tables -P FORWARD DROP
+
+iptables -P OUTPUT ACCEPT
+ip6tables -P OUTPUT ACCEPT
+iptables -A INPUT -i lo -j ACCEPT 
+iptables -A OUTPUT -o lo -j ACCEPT
+iptables -A INPUT -s 127.0.0.0/8 ! -i lo -j DROP
+ip6tables -A INPUT -s ::1/128 ! -i lo -j DROP
